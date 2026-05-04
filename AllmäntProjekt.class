@@ -1,0 +1,68 @@
+package allmäntprojekt;
+import java.util.Scanner;
+import java.util.ArrayList;
+public class AllmäntProjekt {
+    public static void main(String[] args) {
+        Scanner scan = new Scanner(System.in);
+        int antal = antalSpelare(scan);
+        int[] spelarPositioner = new int[antal];
+        boolean någonHarVunnit = false;
+        int tärning;
+        do{
+            for (int i = 0; i < spelarPositioner.length; i++) {
+                System.out.println("Spelare " + (i+1) + ": Tryck enter för att slå tärningen!");
+                scan.nextLine();
+                
+                tärning = (int)(Math.random()*6+1);
+                spelarPositioner[i] += tärning;
+                
+                System.out.println("Du slog en " + tärning + " Din nya plats är: " + spelarPositioner[i]);
+                
+                //Mysterie ruta
+                if (spelarPositioner[i]%5 == 0 && spelarPositioner[i] != 0){
+                    int händelse = (int)(Math.random()*5);
+                    switch (händelse){
+                        case 0:
+                            System.out.println("Du ramlar när du skulle göra något coolt. Gå tillbaka 3 steg");
+                            spelarPositioner[i] -= 3;
+                        case 1: 
+                            System.out.println("En kraftig vind blåser dig framåt! +5 Steg.");  
+                            spelarPositioner[i] += 5;
+                            break;
+                        case 2:
+                            System.out.println("Du hittar en cykel! Du får slå en extra gång. Du går 2:1 steg");
+                            tärning = ((int)(Math.random()*6+1)*2);
+                            System.out.println("Du slog en " + tärning + " Din nya plats är: " + spelarPositioner[i]);
+                            spelarPositioner[i] += tärning;
+                            break;
+                        case 3:
+                            System.out.println("Du hittar ett hål vad vill du göra? (1 för hoppa ner, 2 för att gå förbi)");
+                            if (scan.nextInt() == 1) {
+                                spelarPositioner[i] = 0;
+                                System.out.println("Du hoppar ner i hålet. Du skadar benen och behöver åka till sjukhuset. \nTillbaka till Start");
+                            }
+                            else{
+                                System.out.println("Du går förbi. Men hålet böjar växa. Du snubblar, gå tillbaka 5 steg.");
+                                spelarPositioner[i] -= 5;
+                            }
+                        case 4: 
+                            System.out.println("Magisk portal! Du flyttar fram 10 steg.");
+                            spelarPositioner[i] += 10;
+                            break;
+                    }
+                }
+                if (spelarPositioner[i] >= 100) {
+                    System.out.println("GRATIS SPELARE " + (i+1) + "! Du vann spelet.");
+                    någonHarVunnit = true;
+                    break;
+                }
+            }
+        }while(!någonHarVunnit);
+        scan.close();
+    }
+        
+    public static int antalSpelare(Scanner scan){
+        System.out.println("Hur många spelare?");
+        return scan.nextInt();
+    }
+}
