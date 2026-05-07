@@ -1,35 +1,49 @@
     package skola.byggarebob;
 
     import java.util.Scanner;
+    import java.util.concurrent.TimeUnit;
 
-
-    /*  För att starta Projektet i terminalen:
-    cd C:\Users\leon.larssonberntss\Documents\vscode\Java\boardgame
-    javac -d target\classes src\main\java\skola\byggarebob\App.java
-    java -cp target\classes skola.byggarebob.App
-    */
     public class App {
         public static void main(String[] args) {
             // Skapa en scanner för användarinmatning
             Scanner scan = new Scanner(System.in);
 
+            // Deklarering av variabler för spelet
+            int längdPåSpelplan;
+            int[] mysterielådor;
+            int[] spelarPositioner;
+            int[] extraTärningar;
+            boolean[] skyddsamulet;
+            boolean[] fryst;
+            boolean någonHarVunnit;
+            int tärning;
+            int count;
+            boolean gissatRätt;
+            boolean debugMode = false; // Sätt till true för att visa debug-information
+
             // Visa startmenyn
             System.out.print("Välkommen till det ultimata brädspelet! \nFörbered dig på en resa fylld av spänning, överraskningar och massor av skratt! \nSamla dina vänner och låt äventyret börja!");
-            startMeny(scan);
+            debugMode = startMeny(scan);
 
             // Fråga användaren om spelplanens längd, antal mysterielådor och antal spelare
-            int längdPåSpelplan = längdPåBrädet(scan);
-            int[] mysterielådor = new int[antal(scan)];
-            int[] spelarPositioner = new int[antalSpelare(scan)];
+            if (!debugMode) {
+            längdPåSpelplan = längdPåBrädet(scan);
+            mysterielådor = new int[antalLåder(scan, längdPåSpelplan)];
+            spelarPositioner = new int[antalSpelare(scan)];
+            }
+            else {
+                längdPåSpelplan = 100;
+                mysterielådor = new int[20];
+                spelarPositioner = new int[2];
+            }
 
             // Deklarering av variabler för spelet
-            int[] extraTärningar = new int[spelarPositioner.length];
-            boolean[] skyddsamulet = new boolean[spelarPositioner.length];
-            boolean någonHarVunnit = false;
-            boolean[] fryst = new boolean[spelarPositioner.length];
-            int tärning;
-            int count = 0;
-            boolean gissatRätt = false;
+            extraTärningar = new int[spelarPositioner.length];
+            skyddsamulet = new boolean[spelarPositioner.length];
+            någonHarVunnit = false;
+            fryst = new boolean[spelarPositioner.length];
+            count = 0;
+            gissatRätt = false;
 
             // Generera slumpmässiga positioner för mysterielådorna
             for (int i = 0; i < mysterielådor.length; i++) {
@@ -39,24 +53,41 @@
             // Spelloopen
             do {
                 for (int i = 0; i < spelarPositioner.length; i++) {
+
+                    // Tärningens utfall
+                    if (debugMode) {
+                        System.out.println("Debug mode: Hoppa till ruta (1-" + längdPåSpelplan + "): ");
+                        spelarPositioner[i] = scan.nextInt();
+                        scan.nextLine();
+                        tärning = 0; 
+                    } else {
+                    tärning = (int) (Math.random() * 6 + 1);
+                    }
+                    
+                    // Visualisera spelplanen
+                    visualiseraSpelplanen(spelarPositioner, längdPåSpelplan, mysterielådor);
+
                     // Kontrollera om spelaren har en skyddsamulet
                     if (skyddsamulet[i]) {
                         System.out.println("Skyddsamulet aktiverad! Du är skyddad mot nästa negativa effekt.");
                         skyddsamulet[i] = false;
+                        pausa(1000);
                     }
                     // Kontrollera om spelaren är fryst
                     else if (fryst[i]) {
                         System.out.println("Spelare " + (i + 1) + " är fryst och missar denna runda!");
                         fryst[i] = false;
+                        pausa(1000);
                         continue; // Hoppa till nästa spelare
                     }
-
                     // Spelaren slår tärningen
-                    System.out.print("Spelare " + (i + 1) + ": Tryck enter för att slå tärningen!");
-                    scan.nextLine();
-                    tärning = (int) (Math.random() * 6 + 1);
-                    spelarPositioner[i] += tärning;
-                    System.out.println("Du slog en " + tärning + " Din nya plats är: " + spelarPositioner[i]);
+                    if (!debugMode) {
+                        System.out.print("Spelare " + (i + 1) + ": Tryck enter för att slå tärningen!");
+                        scan.nextLine();
+                        spelarPositioner[i] += tärning;
+                        System.out.println("Du slog en " + tärning + " Din nya plats är: " + spelarPositioner[i]);
+                        pausa(1000);
+                    }
 
                     // Kontrollera om spelaren har extra tärningar
                     if (extraTärningar[i] > 0) {
@@ -65,28 +96,40 @@
                         System.out.println(" Din nya plats är: " + spelarPositioner[i]);
                         spelarPositioner[i] += extra;
                         extraTärningar[i]--;
+                        pausa(1000);
                     }
-
-                    // Visualisera spelplanen
-                    visualiseraSpelplanen(spelarPositioner, längdPåSpelplan, mysterielådor);
 
                     // Kontrollera om spelaren landar på en mysterielåda
                     for (int j = 0; j < mysterielådor.length; j++) {
                         if (spelarPositioner[i] == mysterielådor[j]) {
                             // Generera en slumpmässig effekt
-                            int effekt = (int) (Math.random() * 10);
+                            int effekt;
+                            if (debugMode) {
+                                System.out.print("Debug mode: Ange effektens utfall (0-9): ");
+                                effekt = scan.nextInt();
+                                scan.nextLine(); 
+                            }
+                            else {
+                                effekt = (int) (Math.random() * 10);
+                            }
                             switch (effekt) {
                                 case 0 -> {
                                     System.out.println("Du fastnade i klister! Missa nästa runda!");
                                     fryst[i] = true;
                                 }
                                 case 1 -> {
-                                    // Generera tre slumpmässiga tal och låt spelaren gissa vilket som är störst
-                                    int tal1 = (int) (Math.random() * 100 + 1) * (int) (Math.random() * 100 + 1);
-                                    int tal2 = (int) (Math.random() * 100 + 1) * (int) (Math.random() * 100 + 1);
-                                    int tal3 = (int) (Math.random() * 100 + 1) * (int) (Math.random() * 100 + 1);
+                                    // Generera tre slumpmässiga "ekvationer" och låt spelaren gissa vilken som har störst produkt
+                                    int tal11 = (int) (Math.random() * 100 + 1);
+                                    int tal12 = (int) (Math.random() * 100 + 1);
+                                    int tal21 = (int) (Math.random() * 100 + 1);
+                                    int tal22 = (int) (Math.random() * 100 + 1);
+                                    int tal31 = (int) (Math.random() * 100 + 1);
+                                    int tal32 = (int) (Math.random() * 100 + 1);
+                                    int tal1 = tal11 * tal12;
+                                    int tal2 = tal21 * tal22;
+                                    int tal3 = tal31 * tal32;
 
-                                    System.out.println("Vilket tal är störst? \n1. " + tal1 + "\n2. " + tal2 + "\n3. " + tal3);
+                                    System.out.println("Du hittade en magisk gåta! Vilket av följande tal är störst?\n1. " + tal11 + " * " + tal12 + "\n2. " + tal21 + " * " + tal22 +"\n3. " + tal31 + " * " + tal32 + "\nSkriv 1, 2 eller 3 för att gissa vilket tal som är störst!");
                                     int gissning = scan.nextInt();
                                     scan.nextLine();
 
@@ -103,7 +146,7 @@
                                 case 2 -> {
                                     // Flytta spelaren till en slumpmässig plats på halva brädet
                                     System.out.println("Du hittade en magisk portal! Flytta till en slumpmässig plats på halva brädet!");
-                                    spelarPositioner[i] = (int) (Math.random() * längdPåSpelplan + 1)/2;
+                                    spelarPositioner[i] = (int) (Math.random() * längdPåSpelplan + 1) / 2;
                                 }
                                 case 3 -> {
                                     // Låt spelaren välja mellan två vägar med olika risk och belöning
@@ -136,7 +179,8 @@
                                 case 5 -> {
                                     // Flytta spelaren tillbaka till sin tidigare position
                                     System.out.println("Du hittade en tidsmaskin! Flytta tillbaka " + tärning + " steg i tiden (till din tidigare position)!");
-                                    spelarPositioner[i] -= tärning; // Flytta tillbaka till tidigare position
+                                    spelarPositioner[i] -= tärning; 
+                                    pausa(1000);
                                 }
                                 case 6 -> {
                                     // Byt plats med en slumpmässigt vald spelare
@@ -148,6 +192,7 @@
                                     int temp = spelarPositioner[i];
                                     spelarPositioner[i] = spelarPositioner[annanSpelare];
                                     spelarPositioner[annanSpelare] = temp;
+                                    pausa(1000);
                                 }
                                 case 7 -> {
                                     // Ge spelaren en skyddsamulet som skyddar mot nästa negativa effekt
@@ -171,9 +216,10 @@
                                         count++;
                                         scan.nextLine();
                                         if (gissning == nummer) {
+                                            pausa(1000); // Här för dramatisk effekt innan meddelandet visas
                                             System.out.println("Rätt gissat!");
                                             gissatRätt = true;
-                                            continue;
+                                            break;
                                         } else if (gissning < nummer) {
                                             System.out.println("För lågt! Försök igen.");
                                         } else {
@@ -209,40 +255,63 @@
                     // Kontrollera om någon har vunnit
                     if (spelarPositioner[i] >= längdPåSpelplan) {
                         System.out.println("GRATTIS SPELARE " + (i + 1) + "! Du vann spelet.");
+                        pausa(1500); // Vänta lite innan spelet avslutas för att ge spelaren tid att läsa meddelandet
                         någonHarVunnit = true;
                         break;
                     }
                 }
             } while (!någonHarVunnit);
-
+            
+            System.out.println("Spelet är slut!");
+            System.out.println("Stänger automatisk av programmet...");
+            pausa(1000);
             // Stäng scannern
             scan.close();
         }
         // Metod för att fråga användaren om antal spelare
         public static int antalSpelare(Scanner scan) {
             System.out.println("Hur många spelare?");
-            return scan.nextInt();
+            int antal = scan.nextInt();
+            scan.nextLine(); 
+            if (antal < 2){
+                System.out.println("För få spelare! Ange nytt antal spelare.");
+                return antalSpelare(scan);
+            }
+            return antal;
         }
         // Metod för att visa startmenyn
-        public static void startMeny(Scanner scan) {
+        public static boolean startMeny(Scanner scan) {
             System.out.println("\n1. Starta spelet \n2. Regler \n3. Avsluta");
-            switch (scan.nextInt()) {
-                case 1 -> startaSpelet();
-                case 2 -> regler(scan);
+            int val = scan.nextInt();
+            scan.nextLine();
+            switch (val) {
+                case 1 -> {
+                    startaSpelet();
+                    return false;
+                }
+                case 2 -> {
+                    return regler(scan);
+                }
                 case 3 -> {
                     System.out.println("Avslutar spelet...");
                     System.exit(0);
                 }
+                case 10 -> {
+                    System.out.println("Debug mode aktiverat! Visar debug-information...");
+                    return true;
+                }
                 default -> {
                     System.out.println("Ogiltigt val, startar spelet...");
                     startaSpelet();
+                    return false;
                 }
             }
+            return false;
         }
         // Metod för att visa reglerna
-        public static void regler(Scanner scan) {
+        public static boolean regler(Scanner scan) {
             System.out.println("Regler: \n- Målet är att nå ruta \"n\" först! \n- Slå tärningen och flytta framåt det antal steg du slog. \n- Landar du på en mysterielåda händer något oväntat! \n- Om du landar på samma ruta som en annan spelare så backar den spelaren 1 ruta! \n- Första spelaren att nå eller passera sista rutan vinner! \nLycka till!");
-            startMeny(scan);
+            return startMeny(scan);
         }
         // Metod för att starta spelet
         public static void startaSpelet() {
@@ -251,12 +320,32 @@
         // Metod för att fråga användaren om längden på spelplanen
         public static int längdPåBrädet(Scanner scan) {
             System.out.println("Hur lång ska brädet vara? (Standard är 100)");
-            return scan.nextInt();
+            int längd = scan.nextInt();
+            scan.nextLine();
+            if (längd < 20) {
+                System.out.println("För kort bräde! Sätter längden på brädet till 100.");
+                return 100;
+            }
+            else if (längd > 500) {
+                System.out.println("För långt bräde! Sätter längden på brädet till 100.");
+                return 100;
+            }
+            return längd;
         }
         // Metod för att fråga användaren om antal mysterielådor
-        public static int antal(Scanner scan) {
+        public static int antalLåder(Scanner scan, int längdPåSpelplan) {
             System.out.println("Hur många mysterielådor vill du ha? (Standard är 20% av totala rutor)");
-            return scan.nextInt();
+            int antal = scan.nextInt();
+            scan.nextLine();
+            if (antal > längdPåSpelplan * 0.75) {
+                System.out.println("För många mysterielådor! Sätter antal mysterielådor till 20% av totala rutor.");
+                return (int) (längdPåSpelplan * 0.2);
+            }
+            else if (antal < 1) {
+                System.out.println("För få mysterielådor! Sätter antal mysterielådor till 20% av totala rutor.");
+                return (int) (längdPåSpelplan * 0.2);
+            }
+            return antal;
         }
         // Metod för att visualisera spelplanen
         public static void visualiseraSpelplanen(int[] spelarPositioner, int längdPåSpelplan, int[] mysterielådor) {
@@ -300,8 +389,16 @@
             for (int i = 0; i < spelarPositioner.length; i++) {
                 if (i != nuvarandeSpelarePlats && spelarPositioner[i] == spelarPositioner[nuvarandeSpelarePlats]) {
                     System.out.println("Du landade på samma ruta som spelare " + (i + 1) + "! De går tillbaka 1 steg!");
+                    pausa(1000);
                     spelarPositioner[i]--;
                 }
+            }
+        }
+        public static void pausa(int milisekunder) {
+            try {
+                TimeUnit.MILLISECONDS.sleep(milisekunder); // Vänta i det angivna antalet millisekunder
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }
