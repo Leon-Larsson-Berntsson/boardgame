@@ -19,7 +19,9 @@ public class App {
         int tärning;
         int count;
         boolean gissatRätt;
-        boolean debugMode = false; // Sätt till true för att visa debug-information
+        boolean debugMode = false;
+        int nyPosition;
+        boolean ärMysterielåda; 
 
         // Visa startmenyn
         System.out.print("Välkommen till det ultimata brädspelet! \nFörbered dig på en resa fylld av spänning, överraskningar och massor av skratt! \nSamla dina vänner och låt äventyret börja!");
@@ -47,6 +49,21 @@ public class App {
         // Generera slumpmässiga positioner för mysterielådorna
         for (int i = 0; i < mysterielådor.length; i++) {
             mysterielådor[i] = (int) (Math.random() * (längdPåSpelplan - 1) + 1);
+
+            do { 
+                nyPosition = (int) (Math.random() * (längdPåSpelplan - 1) + 1);
+                ärMysterielåda = false;
+
+                // Kolla om positionen redan är en mysterielåda
+                for (int j = 0; j < mysterielådor.length; j++) {
+                    if (nyPosition == mysterielådor[j]) {
+                        ärMysterielåda = true;
+                        break;
+                    }
+                }
+            } while (ärMysterielåda);
+    
+            mysterielådor[i] = nyPosition;
         }
 
         // Spelloopen
@@ -139,6 +156,7 @@ public class App {
                                 } else {
                                     System.out.println("Fel gissat! Flytta tillbaka 5 steg!");
                                     spelarPositioner[i] -= 5;
+                                    spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
                                 }
                             }
                             case 2 -> {
@@ -156,6 +174,7 @@ public class App {
                                     } else {
                                         System.out.println("Du gick vilse i skogen! -8 steg!");
                                         spelarPositioner[i] -= 8;
+                                        spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
                                     }
                                 } else {
                                     if (Math.random() > 0.5) {
@@ -164,6 +183,7 @@ public class App {
                                     } else {
                                         System.out.println("Inte så säkert ändå... -2 steg!");
                                         spelarPositioner[i] -= 2;
+                                        spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
                                     }
                                 }
                             }
@@ -174,6 +194,7 @@ public class App {
                             case 5 -> {
                                 System.out.println("Du hittade en tidsmaskin! Flytta tillbaka " + tärning + " steg i tiden (till din tidigare position)!");
                                 spelarPositioner[i] -= tärning;
+                                spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
                                 pausa(1000);
                             }
                             case 6 -> {
@@ -384,6 +405,7 @@ public class App {
         for (int i = 0; i < spelarPositioner.length; i++) {
             if (i != nuvarandeSpelarePlats && spelarPositioner[i] == spelarPositioner[nuvarandeSpelarePlats]) {
                 System.out.println("Du landade på samma ruta som spelare " + (i + 1) + "! De går tillbaka 1 steg!");
+                spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
                 pausa(1000);
                 spelarPositioner[i]--;
             }
@@ -396,5 +418,9 @@ public class App {
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         }
+    }
+    // Ser till så att spelaren's position inte går under 0 eller över längden på spelplanen
+    public static int klämmaPosition(int position){
+        return Math.max(0, position);
     }
 }
