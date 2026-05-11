@@ -19,9 +19,13 @@ public class App {
         int tärning;
         int count;
         boolean gissatRätt;
-        boolean debugMode = false;
+        boolean debugMode;
         int nyPosition;
         boolean ärMysterielåda; 
+        String[] spelarNamn;
+        String spelaIgen;
+        String sammaInstälningar;
+        int antalOmgångar;
 
         // Visa startmenyn
         System.out.print("Välkommen till det ultimata brädspelet! \nFörbered dig på en resa fylld av spänning, överraskningar och massor av skratt! \nSamla dina vänner och låt äventyret börja!");
@@ -32,19 +36,28 @@ public class App {
             längdPåSpelplan = längdPåBrädet(scan);
             mysterielådor = new int[antalLådor(scan, längdPåSpelplan)];
             spelarPositioner = new int[antalSpelare(scan)];
+            spelarNamn = new String[spelarPositioner.length];
+            for (int i = 0; i < spelarNamn.length; i++) {
+                System.out.print("Ange namn för spelare " + (i + 1) + ": ");
+                spelarNamn[i] = scan.nextLine();
+            }
         } else {
             längdPåSpelplan = 100;
             mysterielådor = new int[20];
             spelarPositioner = new int[2];
+            spelarNamn = new String[]{"Spelare 1", "Spelare 2"};
         }
 
-        // Deklarering av variabler för spelet
+        // Initialisering av variabler för spelet
         extraTärningar = new int[spelarPositioner.length];
         skyddsamulet = new boolean[spelarPositioner.length];
         någonHarVunnit = false;
         fryst = new boolean[spelarPositioner.length];
         count = 0;
         gissatRätt = false;
+        spelaIgen = "n";
+        antalOmgångar = 0;
+        sammaInstälningar = "n";
 
         // Generera slumpmässiga positioner för mysterielådorna
         for (int i = 0; i < mysterielådor.length; i++) {
@@ -66,211 +79,256 @@ public class App {
             mysterielådor[i] = nyPosition;
         }
 
-        // Spelloopen
+        // Huvudloopen för spelet
         do {
-            for (int i = 0; i < spelarPositioner.length; i++) {
-                // Tärningens utfall
-                if (debugMode) {
-                    System.out.println("Debug mode: Hoppa till ruta (1-" + längdPåSpelplan + "): ");
-                    spelarPositioner[i] = scan.nextInt();
-                    scan.nextLine();
-                    tärning = 0;
-                } else {
-                    tärning = (int) (Math.random() * 6 + 1);
-                }
-
-                // Visualisera spelplanen
-                visualiseraSpelplanen(spelarPositioner, längdPåSpelplan, mysterielådor);
-
-                // Kontrollera om spelaren har en skyddsamulet
-                if (skyddsamulet[i]) {
-                    System.out.println("Skyddsamulet aktiverad! Du är skyddad mot nästa negativa effekt.");
+            if (antalOmgångar == 0) {
+                System.out.println("Startar det första spelet...");
+            } else {
+                System.out.println("Startar omgång " + (antalOmgångar + 1) + "...");
+            }
+            if (antalOmgångar > 0) {
+                System.out.println("Vill ni använda samma inställningar som förra spelet? (y/n)");
+                sammaInstälningar = scan.nextLine();
+            }
+            if (!debugMode && sammaInstälningar.equalsIgnoreCase("n") && antalOmgångar > 0) {
+                // Återställ alla variabler för ett nytt spel
+                for (int i = 0; i < spelarPositioner.length; i++) {
+                    spelarPositioner[i] = 0;
+                    extraTärningar[i] = 0;
                     skyddsamulet[i] = false;
-                    pausa(1000);
-                }
-                // Kontrollera om spelaren är fryst
-                else if (fryst[i]) {
-                    System.out.println("Spelare " + (i + 1) + " är fryst och missar denna runda!");
                     fryst[i] = false;
-                    pausa(1000);
-                    continue; // Hoppa till nästa spelare
                 }
-
-                // Spelaren slår tärningen
-                if (!debugMode) {
-                    System.out.print("Spelare " + (i + 1) + ": Tryck enter för att slå tärningen!");
-                    scan.nextLine();
-                    spelarPositioner[i] += tärning;
-                    System.out.println("Du slog en " + tärning + " Din nya plats är: " + spelarPositioner[i]);
-                    pausa(1000);
+                någonHarVunnit = false;
+                
+                längdPåSpelplan = längdPåBrädet(scan);
+                mysterielådor = new int[antalLådor(scan, längdPåSpelplan)];
+                spelarPositioner = new int[antalSpelare(scan)];
+                spelarNamn = new String[spelarPositioner.length];
+                for (int i = 0; i < spelarNamn.length; i++) {
+                    System.out.print("Ange namn för spelare " + (i + 1) + ": ");
+                    spelarNamn[i] = scan.nextLine();
                 }
-
-                // Kontrollera om spelaren har extra tärningar
-                if (extraTärningar[i] > 0) {
-                    int extra = (int) (Math.random() * 6 + 1);
-                    System.out.println("Extra tärning! Du slog en " + extra);
-                    System.out.println(" Din nya plats är: " + spelarPositioner[i]);
-                    spelarPositioner[i] += extra;
-                    extraTärningar[i]--;
-                    pausa(1000);
+            }
+            // Om spelarna väljer att använda samma inställningar, återställ bara positionerna och statusen för varje spelare
+            else if (sammaInstälningar.equalsIgnoreCase("y") && antalOmgångar > 0) {
+                System.out.println("Samma inställningar som förra spelet kommer att användas.");
+                for (int i = 0; i < spelarPositioner.length; i++) {
+                    spelarPositioner[i] = 0;
+                    extraTärningar[i] = 0;
+                    skyddsamulet[i] = false;
+                    fryst[i] = false;
                 }
+            }
+            // Spelloopen
+            while (!någonHarVunnit) {
+                for (int i = 0; i < spelarPositioner.length; i++) {
+                    // Tärningens utfall
+                    if (debugMode) {
+                        System.out.println("Debug mode: Hoppa till ruta (1-" + längdPåSpelplan + "): ");
+                        spelarPositioner[i] = scan.nextInt();
+                        scan.nextLine();
+                        tärning = 0;
+                    } else {
+                        tärning = (int) (Math.random() * 6 + 1);
+                    }
 
-                // Kontrollera om spelaren landar på en mysterielåda
-                for (int j = 0; j < mysterielådor.length; j++) {
-                    if (spelarPositioner[i] == mysterielådor[j]) {
-                        // Generera en slumpmässig effekt
-                        int effekt;
-                        if (debugMode) {
-                            System.out.print("Debug mode: Ange effektens utfall (0-9): ");
-                            effekt = scan.nextInt();
-                            scan.nextLine();
-                        } else {
-                            effekt = (int) (Math.random() * 10);
-                        }
+                    // Visualisera spelplanen
+                    visualiseraSpelplanen(spelarPositioner, längdPåSpelplan, mysterielådor);
 
-                        switch (effekt) {
-                            case 0 -> {
-                                System.out.println("Du fastnade i klister! Missa nästa runda!");
-                                fryst[i] = true;
-                            }
-                            case 1 -> {
-                                int tal11 = (int) (Math.random() * 100 + 1);
-                                int tal12 = (int) (Math.random() * 100 + 1);
-                                int tal21 = (int) (Math.random() * 100 + 1);
-                                int tal22 = (int) (Math.random() * 100 + 1);
-                                int tal31 = (int) (Math.random() * 100 + 1);
-                                int tal32 = (int) (Math.random() * 100 + 1);
-                                int tal1 = tal11 * tal12;
-                                int tal2 = tal21 * tal22;
-                                int tal3 = tal31 * tal32;
+                    // Kontrollera om spelaren har en skyddsamulet
+                    if (skyddsamulet[i]) {
+                        System.out.println("Skyddsamulet aktiverad! Du är skyddad mot nästa negativa effekt.");
+                        skyddsamulet[i] = false;
+                        pausa(1000);
+                    }
+                    // Kontrollera om spelaren är fryst
+                    else if (fryst[i]) {
+                        System.out.println(spelarNamn[i] + " är fryst och missar denna runda!");
+                        fryst[i] = false;
+                        pausa(1000);
+                        continue; // Hoppa till nästa spelare
+                    }
 
-                                System.out.println("Du hittade en magisk gåta! Vilket av följande tal är störst?\n1. " + tal11 + " * " + tal12 + "\n2. " + tal21 + " * " + tal22 + "\n3. " + tal31 + " * " + tal32 + "\nSkriv 1, 2 eller 3 för att gissa vilket tal som är störst!");
-                                int gissning = scan.nextInt();
+                    // Spelaren slår tärningen
+                    if (!debugMode) {
+                        System.out.print(spelarNamn[i] + ": Tryck enter för att slå tärningen!");
+                        scan.nextLine();
+                        spelarPositioner[i] += tärning;
+                        System.out.println("Du slog en " + tärning + " Din nya plats är: " + spelarPositioner[i]);
+                        pausa(1000);
+                    }
+
+                    // Kontrollera om spelaren har extra tärningar
+                    if (extraTärningar[i] > 0) {
+                        int extra = (int) (Math.random() * 6 + 1);
+                        System.out.println("Extra tärning! Du slog en " + extra);
+                        System.out.println(" Din nya plats är: " + spelarPositioner[i]);
+                        spelarPositioner[i] += extra;
+                        extraTärningar[i]--;
+                        pausa(1000);
+                    }
+
+                    // Kontrollera om spelaren landar på en mysterielåda
+                    for (int j = 0; j < mysterielådor.length; j++) {
+                        if (spelarPositioner[i] == mysterielådor[j]) {
+                            // Generera en slumpmässig effekt
+                            int effekt;
+                            if (debugMode) {
+                                System.out.print("Debug mode: Ange effektens utfall (0-9): ");
+                                effekt = scan.nextInt();
                                 scan.nextLine();
+                            } else {
+                                effekt = (int) (Math.random() * 10);
+                            }
 
-                                if ((gissning == 1 && tal1 > tal2 && tal1 > tal3)
-                                        || (gissning == 2 && tal2 > tal1 && tal2 > tal3)
-                                        || (gissning == 3 && tal3 > tal1 && tal3 > tal2)) {
-                                    System.out.println("Rätt gissat! Flytta fram 5 steg!");
-                                    spelarPositioner[i] += 5;
-                                } else {
-                                    System.out.println("Fel gissat! Flytta tillbaka 5 steg!");
-                                    spelarPositioner[i] -= 5;
-                                    spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
+                            switch (effekt) {
+                                case 0 -> {
+                                    System.out.println("Du fastnade i klister! Missa nästa runda!");
+                                    fryst[i] = true;
                                 }
-                            }
-                            case 2 -> {
-                                System.out.println("Du hittade en magisk portal! Flytta till en slumpmässig plats på halva brädet!");
-                                spelarPositioner[i] = (int) ((Math.random() * (längdPåSpelplan / 2)) + 1);
-                            }
-                            case 3 -> {
-                                System.out.println("Du kommer till ett vägskäl! Vilken väg väljer du?\n1. Den mörka skogen (hög risk, hög belöning)\n2. Den säkra vägen (låg risk, låg belöning)");
-                                int vägVal = scan.nextInt();
-                                scan.nextLine();
-                                if (vägVal == 1) {
-                                    if (Math.random() > 0.5) {
-                                        System.out.println("Du klarade skogen! +10 steg!");
-                                        spelarPositioner[i] += 10;
-                                    } else {
-                                        System.out.println("Du gick vilse i skogen! -8 steg!");
-                                        spelarPositioner[i] -= 8;
-                                        spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
-                                    }
-                                } else {
-                                    if (Math.random() > 0.5) {
-                                        System.out.println("Säkra vägen lönade sig! +4 steg!");
-                                        spelarPositioner[i] += 4;
-                                    } else {
-                                        System.out.println("Inte så säkert ändå... -2 steg!");
-                                        spelarPositioner[i] -= 2;
-                                        spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
-                                    }
-                                }
-                            }
-                            case 4 -> {
-                                System.out.println("Du hittade en extra tärning! Du får slå en extra tärning i nästa runda.");
-                                extraTärningar[i]++;
-                            }
-                            case 5 -> {
-                                System.out.println("Du hittade en tidsmaskin! Flytta tillbaka " + tärning + " steg i tiden (till din tidigare position)!");
-                                spelarPositioner[i] -= tärning;
-                                spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
-                                pausa(1000);
-                            }
-                            case 6 -> {
-                                int annanSpelare = (int) (Math.random() * spelarPositioner.length);
-                                while (annanSpelare == i) {
-                                    annanSpelare = (int) (Math.random() * spelarPositioner.length);
-                                }
-                                System.out.println("Du hittade en teleport! Byt plats med spelare " + (annanSpelare + 1) + "!");
-                                int temp = spelarPositioner[i];
-                                spelarPositioner[i] = spelarPositioner[annanSpelare];
-                                spelarPositioner[annanSpelare] = temp;
-                                pausa(1000);
-                            }
-                            case 7 -> {
-                                System.out.println("Du hittade en skyddsamulet! Den skyddar dig mot nästa negativa effekt du skulle få.");
-                                skyddsamulet[i] = true;
-                            }
-                            case 8 -> {
-                                System.out.println("Du snubblade på en rot! Du missar din nästa tur!");
-                                fryst[i] = true;
-                            }
-                            case 9 -> {
-                                int nummer = (int) (Math.random() * 100 + 1);
-                                count = 0;
-                                gissatRätt = false;
-                                System.out.println("Gissa det magiska numret mellan 1 och 100! Du har 5 försök.");
-                                for (int försök = 1; försök <= 5; försök++) {
-                                    System.out.print("Försök " + försök + ": ");
+                                case 1 -> {
+                                    int tal11 = (int) (Math.random() * 100 + 1);
+                                    int tal12 = (int) (Math.random() * 100 + 1);
+                                    int tal21 = (int) (Math.random() * 100 + 1);
+                                    int tal22 = (int) (Math.random() * 100 + 1);
+                                    int tal31 = (int) (Math.random() * 100 + 1);
+                                    int tal32 = (int) (Math.random() * 100 + 1);
+                                    int tal1 = tal11 * tal12;
+                                    int tal2 = tal21 * tal22;
+                                    int tal3 = tal31 * tal32;
+
+                                    System.out.println("Du hittade en magisk gåta! Vilket av följande tal är störst?\n1. " + tal11 + " * " + tal12 + "\n2. " + tal21 + " * " + tal22 + "\n3. " + tal31 + " * " + tal32 + "\nSkriv 1, 2 eller 3 för att gissa vilket tal som är störst!");
                                     int gissning = scan.nextInt();
-                                    count++;
                                     scan.nextLine();
-                                    if (gissning == nummer) {
-                                        pausa(1000);
-                                        System.out.println("Rätt gissat!");
-                                        gissatRätt = true;
-                                        break;
-                                    } else if (gissning < nummer) {
-                                        System.out.println("För lågt! Försök igen.");
+
+                                    if ((gissning == 1 && tal1 > tal2 && tal1 > tal3)
+                                            || (gissning == 2 && tal2 > tal1 && tal2 > tal3)
+                                            || (gissning == 3 && tal3 > tal1 && tal3 > tal2)) {
+                                        System.out.println("Rätt gissat! Flytta fram 5 steg!");
+                                        spelarPositioner[i] += 5;
                                     } else {
-                                        System.out.println("För högt! Försök igen.");
+                                        System.out.println("Fel gissat! Flytta tillbaka 5 steg!");
+                                        spelarPositioner[i] -= 5;
+                                        spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
                                     }
                                 }
-                                if (gissatRätt && count == 1) {
-                                    System.out.println("Du gissade rätt på första försöket! Flytta fram 30 steg!");
-                                    spelarPositioner[i] += 30;
-                                } else if (gissatRätt && count <= 3) {
-                                    System.out.println("Du gissade rätt! Flytta fram 10 steg!");
-                                    spelarPositioner[i] += 10;
+                                case 2 -> {
+                                    System.out.println("Du hittade en magisk portal! Flytta till en slumpmässig plats på halva brädet!");
+                                    spelarPositioner[i] = (int) ((Math.random() * (längdPåSpelplan / 2)) + 1);
                                 }
-                                if (!gissatRätt) {
-                                    System.out.println("Du gissade inte rätt på 5 försök! Flytta tillbaka 15 steg!");
-                                    spelarPositioner[i] -= 15;
+                                case 3 -> {
+                                    System.out.println("Du kommer till ett vägskäl! Vilken väg väljer du?\n1. Den mörka skogen (hög risk, hög belöning)\n2. Den säkra vägen (låg risk, låg belöning)");
+                                    int vägVal = scan.nextInt();
+                                    scan.nextLine();
+                                    if (vägVal == 1) {
+                                        if (Math.random() > 0.5) {
+                                            System.out.println("Du klarade skogen! +10 steg!");
+                                            spelarPositioner[i] += 10;
+                                        } else {
+                                            System.out.println("Du gick vilse i skogen! -8 steg!");
+                                            spelarPositioner[i] -= 8;
+                                            spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
+                                        }
+                                    } else {
+                                        if (Math.random() > 0.5) {
+                                            System.out.println("Säkra vägen lönade sig! +4 steg!");
+                                            spelarPositioner[i] += 4;
+                                        } else {
+                                            System.out.println("Inte så säkert ändå... -2 steg!");
+                                            spelarPositioner[i] -= 2;
+                                            spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
+                                        }
+                                    }
                                 }
-                                System.out.println("Din nya plats är: " + spelarPositioner[i]);
+                                case 4 -> {
+                                    System.out.println("Du hittade en extra tärning! Du får slå en extra tärning i nästa runda.");
+                                    extraTärningar[i]++;
+                                }
+                                case 5 -> {
+                                    System.out.println("Du hittade en tidsmaskin! Flytta tillbaka " + tärning + " steg i tiden (till din tidigare position)!");
+                                    spelarPositioner[i] -= tärning;
+                                    spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
+                                    pausa(1000);
+                                }
+                                case 6 -> {
+                                    int annanSpelare = (int) (Math.random() * spelarPositioner.length);
+                                    while (annanSpelare == i) {
+                                        annanSpelare = (int) (Math.random() * spelarPositioner.length);
+                                    }
+                                    System.out.println("Du hittade en teleport! Byt plats med spelare " + (annanSpelare + 1) + "!");
+                                    int temp = spelarPositioner[i];
+                                    spelarPositioner[i] = spelarPositioner[annanSpelare];
+                                    spelarPositioner[annanSpelare] = temp;
+                                    pausa(1000);
+                                }
+                                case 7 -> {
+                                    System.out.println("Du hittade en skyddsamulet! Den skyddar dig mot nästa negativa effekt du skulle få.");
+                                    skyddsamulet[i] = true;
+                                }
+                                case 8 -> {
+                                    System.out.println("Du snubblade på en rot! Du missar din nästa tur!");
+                                    fryst[i] = true;
+                                }
+                                case 9 -> {
+                                    int nummer = (int) (Math.random() * 100 + 1);
+                                    count = 0;
+                                    gissatRätt = false;
+                                    System.out.println("Gissa det magiska numret mellan 1 och 100! Du har 5 försök.");
+                                    for (int försök = 1; försök <= 5; försök++) {
+                                        System.out.print("Försök " + försök + ": ");
+                                        int gissning = scan.nextInt();
+                                        count++;
+                                        scan.nextLine();
+                                        if (gissning == nummer) {
+                                            pausa(1000);
+                                            System.out.println("Rätt gissat!");
+                                            gissatRätt = true;
+                                            break;
+                                        } else if (gissning < nummer) {
+                                            System.out.println("För lågt! Försök igen.");
+                                        } else {
+                                            System.out.println("För högt! Försök igen.");
+                                        }
+                                    }
+                                    if (gissatRätt && count == 1) {
+                                        System.out.println("Du gissade rätt på första försöket! Flytta fram 30 steg!");
+                                        spelarPositioner[i] += 30;
+                                    } else if (gissatRätt && count <= 3) {
+                                        System.out.println("Du gissade rätt! Flytta fram 10 steg!");
+                                        spelarPositioner[i] += 10;
+                                    }
+                                    if (!gissatRätt) {
+                                        System.out.println("Du gissade inte rätt på 5 försök! Flytta tillbaka 15 steg!");
+                                        spelarPositioner[i] -= 15;
+                                    }
+                                    System.out.println("Din nya plats är: " + spelarPositioner[i]);
+                                }
+                                default -> {
+                                    System.out.println("Du hittade en vanlig mysterielåda! Inget händer... eller gör det?");
+                                }
                             }
-                            default -> {
-                                System.out.println("Du hittade en vanlig mysterielåda! Inget händer... eller gör det?");
-                            }
+                            System.out.println("Din nya plats är: " + spelarPositioner[i]);
+                            break;
                         }
-                        System.out.println("Din nya plats är: " + spelarPositioner[i]);
+                    }
+
+                    // Kontrollera om spelaren landar på samma ruta som en annan spelare
+                    kollaOmSpelareSammaPlats(spelarPositioner, i);
+
+                    // Kontrollera om någon har vunnit
+                    if (spelarPositioner[i] >= längdPåSpelplan) {
+                        System.out.println("GRATTIS SPELARE " + (i + 1) + "! Du vann spelet.");
+                        pausa(1500); // Vänta lite innan spelet avslutas för att ge spelaren tid att läsa meddelandet
+                        någonHarVunnit = true;
                         break;
                     }
                 }
-
-                // Kontrollera om spelaren landar på samma ruta som en annan spelare
-                kollaOmSpelareSammaPlats(spelarPositioner, i);
-
-                // Kontrollera om någon har vunnit
-                if (spelarPositioner[i] >= längdPåSpelplan) {
-                    System.out.println("GRATTIS SPELARE " + (i + 1) + "! Du vann spelet.");
-                    pausa(1500); // Vänta lite innan spelet avslutas för att ge spelaren tid att läsa meddelandet
-                    någonHarVunnit = true;
-                    break;
-                }
             }
-        } while (!någonHarVunnit);
+            // Fråga om spelarna vill spela igen
+            System.out.println("Vill ni spela igen? (y/n)");
+            spelaIgen = scan.nextLine();                
+            antalOmgångar++;
+        } while (spelaIgen.equalsIgnoreCase("y"));
 
         System.out.println("Spelet är slut!");
         System.out.println("Stänger automatisk av programmet...");
@@ -412,6 +470,7 @@ public class App {
         }
     }
 
+    // Metod för att pausa spelet i ett visst antal millisekunder
     public static void pausa(int milisekunder) {
         try {
             TimeUnit.MILLISECONDS.sleep(milisekunder);
@@ -419,7 +478,7 @@ public class App {
             Thread.currentThread().interrupt();
         }
     }
-    // Ser till så att spelaren's position inte går under 0 eller över längden på spelplanen
+    // Ser till så att spelaren's position inte understiger 0 eller överstiger längden på spelplanen
     public static int klämmaPosition(int position){
         return Math.max(0, position);
     }
