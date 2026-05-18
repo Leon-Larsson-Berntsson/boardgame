@@ -300,6 +300,7 @@ public class App {
                                     if (!gissatRätt) {
                                         System.out.println("Du gissade inte rätt på 5 försök! Flytta tillbaka 15 steg!");
                                         spelarPositioner[i] -= 15;
+                                        spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
                                     }
                                     System.out.println("Din nya plats är: " + spelarPositioner[i]);
                                 }
@@ -466,6 +467,7 @@ public class App {
                 spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
                 pausa(1000);
                 spelarPositioner[i]--;
+                spelarPositioner[i] = klämmaPosition(spelarPositioner[i]);
             }
         }
     }
